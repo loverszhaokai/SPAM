@@ -16,20 +16,21 @@
 #include <map>
 
 
+std::string class_name = "";
 std::string case_path = "";
 std::string keywords_path = "";
+std::string output_path = "";
 int cur_num = 0;
 std::map<std::string, int> keywords;
 
 void Usage() {
-  std::cout << "train case_path keywords_path" << std::endl;
+  std::cout << "train class_name case_path keywords_path output_path" << std::endl;
 }
 
 int InitKeywords() {
   std::fstream fs (keywords_path.c_str(), std::fstream::in);
   if (!fs.is_open()) {
-    std::cout << "Failed to find keywords_path=" << keywords_path << "||" << std::endl;
-    return -1;
+    return 0;
   }
 
   std::string line, word, num;
@@ -48,7 +49,8 @@ int InitKeywords() {
 }
 
 int ParseCase(std::string* result) {
-  std::fstream kw_out (keywords_path.c_str(), std::fstream::out | std::fstream::app);
+  std::fstream kw_out (keywords_path.c_str(),
+                       std::fstream::out | std::fstream::app);
   if (!kw_out.is_open()) {
     std::cout << "Failed to find keywords_path=" << keywords_path << "||" << std::endl;
     return -1;
@@ -83,7 +85,7 @@ int ParseCase(std::string* result) {
             id = keywords[word];
             kw_out << word << "=" << keywords[word] << std::endl;
           }
-          snprintf(id_buffer, sizeof(id_buffer), "%d", id);
+          snprintf(id_buffer, sizeof(id_buffer), "%d:1", id);
           result->append(std::string(id_buffer) + " ");
         }
       }
@@ -96,31 +98,33 @@ int ParseCase(std::string* result) {
 }
 
 int main(int argc, char** argv) {
-  if (argc != 3) {
+  if (argc != 5) {
     Usage();
     return -1;
   }
 
-  case_path = argv[1];
-  keywords_path = argv[2];
+  class_name = argv[1];
+  case_path = argv[2];
+  keywords_path = argv[3];
+  output_path = argv[4];
 
   if (InitKeywords() != 0) {
     return -1;
   }
 
-  std::string transform_output = "";
-  if (ParseCase(&transform_output) != 0) {
+  std::string output_line = "";
+  if (ParseCase(&output_line) != 0) {
     return -1;
   }
 
-  const std::string case_out_path = case_path + ".transform";
-  std::fstream case_out (case_out_path.c_str(), std::fstream::out);
-  if (!case_out.is_open()) {
-    std::cout << "Failed to find case_out_path=" << case_out_path << "||" << std::endl;
+  std::fstream out_fs (output_path.c_str(),
+                       std::fstream::out | std::fstream::app);
+  if (!out_fs.is_open()) {
+    std::cout << "Failed to find output_path=" << output_path << "||" << std::endl;
     return -1;
   }
-  case_out << transform_output << std::endl;
-  case_out.close();
+  out_fs << class_name << " " << output_line << std::endl;
+  out_fs.close();
 
   return 0;
 }
